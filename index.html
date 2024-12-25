@@ -3,41 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <title>Morpion avec IA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
             flex-direction: column;
+            padding: clamp(10px, 3vw, 20px);
+            box-sizing: border-box;
         }
         .game-container {
+            width: 100%;
+            max-width: min(95vw, 500px);
             background-color: white;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            padding: 20px;
+            padding: clamp(10px, 3vw, 20px);
             text-align: center;
         }
         .game-board {
             display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-gap: 10px;
-            margin: 20px 0;
+            grid-template-columns: repeat(3, 1fr);
+            gap: clamp(5px, 1.5vw, 10px);
+            margin: clamp(10px, 3vw, 20px) auto;
+            width: 100%;
+            max-width: min(90vw, 400px);
+            aspect-ratio: 1;
         }
         .cell {
-            width: 100px;
-            height: 100px;
+            aspect-ratio: 1;
             background-color: #e0e0e0;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 60px;
+            font-size: clamp(24px, 10vw, 60px);
             cursor: pointer;
             transition: all 0.3s;
-            border-radius: 10px;
+            border-radius: clamp(5px, 1.5vw, 10px);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .cell:hover {
             background-color: #d0d0d0;
@@ -48,21 +57,21 @@
             color: #006400;
         }
         .status {
-            font-size: 24px;
-            margin-bottom: 20px;
+            font-size: clamp(18px, 5vw, 24px);
+            margin-bottom: clamp(10px, 3vw, 20px);
             font-weight: bold;
-            min-height: 36px;
+            min-height: 2em;
         }
         .button {
             background-color: #4CAF50;
             border: none;
             color: white;
-            padding: 10px 20px;
+            padding: clamp(8px, 2vw, 10px) clamp(15px, 4vw, 20px);
             text-align: center;
             text-decoration: none;
             display: inline-block;
-            font-size: 16px;
-            margin: 5px;
+            font-size: clamp(14px, 4vw, 16px);
+            margin: clamp(5px, 1.5vw, 10px);
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s;
@@ -70,18 +79,18 @@
         .button:hover {
             background-color: #45a049;
         }
-        .mode-select {
-            margin-bottom: 20px;
-        }
-        .difficulty {
-            margin-bottom: 20px;
-            display: none;
+        .mode-select, .difficulty, .board-size {
+            margin-bottom: clamp(10px, 3vw, 20px);
         }
         select {
-            padding: 8px;
-            font-size: 16px;
+            padding: clamp(5px, 1.5vw, 8px);
+            font-size: clamp(14px, 4vw, 16px);
             border-radius: 5px;
-            margin: 0 10px;
+            margin: 0 clamp(5px, 1.5vw, 10px);
+            max-width: 150px;
+        }
+        label {
+            font-size: clamp(14px, 4vw, 16px);
         }
         .cell.disabled {
             cursor: not-allowed;
@@ -89,6 +98,82 @@
         .thinking {
             color: #666;
             font-style: italic;
+        }
+        .board-size {
+            margin-bottom: 20px;
+        }
+        .game-board.size-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .game-board.size-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+        .cell.size-4 {
+            font-size: clamp(20px, 8vw, 45px);
+        }
+        .cell.size-5 {
+            font-size: clamp(16px, 6vw, 36px);
+        }
+        /* Media Queries */
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 10px;
+            }
+            
+            .mode-select, .difficulty, .board-size {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            select {
+                width: 80%;
+                max-width: 200px;
+            }
+        }
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+            }
+            
+            .game-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                max-width: 90vw;
+            }
+            
+            .game-board {
+                grid-row: 1 / span 3;
+                margin: 0;
+            }
+            
+            .mode-select, .difficulty, .board-size {
+                margin-bottom: 5px;
+            }
+            
+            .status {
+                margin: 5px 0;
+            }
+        }
+        /* Styles pour le touch sur mobile */
+        @media (hover: none) {
+            .cell:hover {
+                transform: none;
+                background-color: #e0e0e0;
+            }
+            
+            .cell:active {
+                background-color: #d0d0d0;
+                transform: scale(0.95);
+            }
+        }
+        /* Styles pour éviter le zoom sur mobile lors du tap */
+        @media (max-width: 768px) {
+            select, input {
+                font-size: 16px !important;
+            }
         }
     </style>
 </head>
@@ -108,6 +193,14 @@
                 <option value="medium">Moyen</option>
                 <option value="hard">Difficile</option>
                 <option value="tonton">Tonton 👾</option>
+            </select>
+        </div>
+        <div class="board-size">
+            <label for="boardSize">Taille du plateau :</label>
+            <select id="boardSize">
+                <option value="3">3x3</option>
+                <option value="4">4x4</option>
+                <option value="5">5x5</option>
             </select>
         </div>
         <div class="status" id="status">C'est au tour de X</div>
@@ -135,6 +228,7 @@
                 this.gameModeSelect = document.getElementById('gameMode');
                 this.difficultySelect = document.getElementById('difficultySelect');
                 this.aiDifficulty = document.getElementById('aiDifficulty');
+                this.boardSize = document.getElementById('boardSize');
 
                 this.currentPlayer = 'X';
                 this.gameBoard = Array(9).fill('');
@@ -142,6 +236,7 @@
                 this.winningIndexes = [];
                 this.isAIMode = false;
                 this.isAITurn = false;
+                this.currentSize = 3;
 
                 this.winningConditions = [
                     [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -159,6 +254,10 @@
                 this.gameModeSelect.addEventListener('change', () => {
                     this.isAIMode = this.gameModeSelect.value === 'ai';
                     this.difficultySelect.style.display = this.isAIMode ? 'block' : 'none';
+                    this.resetGame();
+                });
+                this.boardSize.addEventListener('change', () => {
+                    this.currentSize = parseInt(this.boardSize.value);
                     this.resetGame();
                 });
             }
@@ -344,14 +443,14 @@
                 this.winningIndexes = [];
 
                 for (let condition of this.winningConditions) {
-                    const [a, b, c] = condition;
-                    if (
-                        this.gameBoard[a] &&
-                        this.gameBoard[a] === this.gameBoard[b] &&
-                        this.gameBoard[a] === this.gameBoard[c]
-                    ) {
+                    const values = condition.map(index => this.gameBoard[index]);
+                    const firstValue = values[0];
+                    
+                    if (!firstValue) continue;
+                    
+                    if (values.every(value => value === firstValue)) {
                         roundWon = true;
-                        this.winningIndexes = [a, b, c];
+                        this.winningIndexes = condition;
                         break;
                     }
                 }
@@ -375,7 +474,8 @@
             }
 
             resetGame() {
-                this.gameBoard = Array(9).fill('');
+                const totalCells = this.currentSize * this.currentSize;
+                this.gameBoard = Array(totalCells).fill('');
                 this.gameActive = true;
                 this.currentPlayer = 'X';
                 this.winningIndexes = [];
@@ -384,10 +484,56 @@
                 this.status.textContent = "C'est au tour de X";
                 this.status.classList.remove('thinking');
                 
-                this.cells.forEach(cell => {
-                    cell.textContent = '';
-                    cell.classList.remove('winning');
-                });
+                this.createBoard();
+                this.updateWinningConditions();
+            }
+
+            updateWinningConditions() {
+                this.winningConditions = [];
+                
+                // Lignes horizontales
+                for (let i = 0; i < this.currentSize; i++) {
+                    const row = [];
+                    for (let j = 0; j < this.currentSize; j++) {
+                        row.push(i * this.currentSize + j);
+                    }
+                    this.winningConditions.push(row);
+                }
+                
+                // Lignes verticales
+                for (let i = 0; i < this.currentSize; i++) {
+                    const col = [];
+                    for (let j = 0; j < this.currentSize; j++) {
+                        col.push(i + j * this.currentSize);
+                    }
+                    this.winningConditions.push(col);
+                }
+                
+                // Diagonales
+                const diag1 = [];
+                const diag2 = [];
+                for (let i = 0; i < this.currentSize; i++) {
+                    diag1.push(i * this.currentSize + i);
+                    diag2.push(i * this.currentSize + (this.currentSize - 1 - i));
+                }
+                this.winningConditions.push(diag1, diag2);
+            }
+
+            createBoard() {
+                this.board.innerHTML = '';
+                const totalCells = this.currentSize * this.currentSize;
+                
+                for (let i = 0; i < totalCells; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = `cell size-${this.currentSize}`;
+                    cell.setAttribute('data-index', i);
+                    this.board.appendChild(cell);
+                }
+                
+                this.board.className = `game-board size-${this.currentSize}`;
+                this.cells = document.querySelectorAll('.cell');
+                this.cells.forEach(cell => 
+                    cell.addEventListener('click', (e) => this.handleCellClick(e)));
             }
         }
 
