@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Morpion</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            flex-direction: column;
+        }
+        .game-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin: 20px 0;
+            position: relative;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 60px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        .cell:hover {
+            background-color: #d0d0d0;
+        }
+        .cell.winner {
+            background-color: rgba(76, 175, 80, 0.2);
+        }
+        .status {
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .reset-btn {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .reset-btn:hover {
+            background-color: #45a049;
+        }
+        .winning-line {
+            position: absolute;
+            background-color: rgba(255, 0, 0, 0.6);
+            z-index: 1;
+            transition: all 0.5s ease;
+        }
+        .winning-line.horizontal {
+            height: 10px;
+            width: 320px;
+            left: -10px;
+        }
+        .winning-line.vertical {
+            width: 10px;
+            height: 320px;
+            top: -10px;
+        }
+        .winning-line.diagonal-down {
+            width: 10px;
+            height: 450px;
+            transform: rotate(45deg);
+        }
+        .winning-line.diagonal-up {
+            width: 10px;
+            height: 450px;
+            transform: rotate(-45deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="status" id="status">C'est au tour de X</div>
+        <div class="game-board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <button class="reset-btn" id="reset">Recommencer</button>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const status = document.getElementById('status');
+        const resetBtn = document.getElementById('reset');
+        const cells = document.querySelectorAll('.cell');
+
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+
+        const winningConditions = [
+            {indexes: [0, 1, 2], type: 'horizontal', position: 'top'},
+            {indexes: [3, 4, 5], type: 'horizontal', position: 'middle'},
+            {indexes: [6, 7, 8], type: 'horizontal', position: 'bottom'},
+            {indexes: [0, 3, 6], type: 'vertical', position: 'left'},
+            {indexes: [1, 4, 7], type: 'vertical', position: 'middle'},
+            {indexes: [2, 5, 8], type: 'vertical', position: 'right'},
+            {indexes: [0, 4, 8], type: 'diagonal', position: 'down'},
+            {indexes: [2, 4, 6], type: 'diagonal', position: 'up'}
+        ];
+
+        function handleCellClick(e) {
+            const clickedCell = e.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+            if (gameBoard[clickedCellIndex] !== '' || !gameActive) return;
+
+            gameBoard[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+
+            // Utiliser setTimeout pour s'assurer que le rendu est à jour
+            setTimeout(checkResult, 0);
+        }
+
+        function drawWinningLine(winCondition) {
+            const line = document.createElement('div');
+            line.classList.add('winning-line');
+            
+            // Déterminer la classe et la position en fonction du type de ligne
+            switch(winCondition.type) {
+                case 'horizontal':
+                    line.classList.add('horizontal');
+                    if (winCondition.position === 'top') line.style.top = '50px';
+                    if (winCondition.position === 'middle') line.style.top = '160px';
+                    if (winCondition.position === 'bottom') line.style.top = '270px';
+                    break;
+                case 'vertical':
+                    line.classList.add('vertical');
+                    if (winCondition.position === 'left') line.style.left = '50px';
+                    if (winCondition.position === 'middle') line.style.left = '160px';
+                    if (winCondition.position === 'right') line.style.left = '270px';
+                    break;
+                case 'diagonal':
+                    if (winCondition.position === 'down') {
+                        line.classList.add('diagonal-down');
+                        line.style.left = '145px';
+                        line.style.top = '-60px';
+                    }
+                    if (winCondition.position === 'up') {
+                        line.classList.add('diagonal-up');
+                        line.style.left = '145px';
+                        line.style.top = '-60px';
+                    }
+                    break;
+            }
+
+            board.appendChild(line);
+
+            // Mettre en surbrillance les cellules gagnantes
+            winCondition.indexes.forEach(index => {
+                cells[index].classList.add('winner');
+            });
+        }
+
+        function checkResult() {
+            let roundWon = false;
+            let winningCondition = null;
+
+            for (let condition of winningConditions) {
+                const [a, b, c] = condition.indexes;
+                if (
+                    gameBoard[a] &&
+                    gameBoard[a] === gameBoard[b] &&
+                    gameBoard[a] === gameBoard[c]
+                ) {
+                    roundWon = true;
+                    winningCondition = condition;
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                status.textContent = `Le joueur ${currentPlayer} a gagné !`;
+                gameActive = false;
+                
+                // Utiliser setTimeout pour s'assurer que la ligne gagnante est bien dessinée
+                setTimeout(() => {
+                    drawWinningLine(winningCondition);
+                }, 10);
+                
+                return;
+            }
+
+            if (!gameBoard.includes('')) {
+                status.textContent = "Égalité !";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            status.textContent = `C'est au tour de ${currentPlayer}`;
+        }
+
+        function resetGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'X';
+            status.textContent = "C'est au tour de X";
+            
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('winner');
+            });
+
+            // Supprimer la ligne de victoire précédente s'il y en a une
+            const existingLine = board.querySelector('.winning-line');
+            if (existingLine) {
+                board.removeChild(existingLine);
+            }
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        resetBtn.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
