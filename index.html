@@ -105,14 +105,8 @@
         .game-board.size-4 {
             grid-template-columns: repeat(4, 1fr);
         }
-        .game-board.size-5 {
-            grid-template-columns: repeat(5, 1fr);
-        }
         .cell.size-4 {
             font-size: clamp(20px, 8vw, 45px);
-        }
-        .cell.size-5 {
-            font-size: clamp(16px, 6vw, 36px);
         }
         /* Media Queries */
         @media (max-width: 480px) {
@@ -200,7 +194,6 @@
             <select id="boardSize">
                 <option value="3">3x3</option>
                 <option value="4">4x4</option>
-                <option value="5">5x5</option>
             </select>
         </div>
         <div class="status" id="status">C'est au tour de X</div>
@@ -298,19 +291,23 @@
                 let move;
                 const difficulty = this.aiDifficulty.value;
 
-                switch(difficulty) {
-                    case 'easy':
-                        move = Math.random() > 0.3 ? this.getSmartMove() : this.getRandomMove();
-                        break;
-                    case 'medium':
-                        move = Math.random() > 0.15 ? this.getSmartMove() : this.getRandomMove();
-                        break;
-                    case 'hard':
-                        move = Math.random() > 0.95 ? this.getSmartMove() : this.getBestMove();
-                        break;
-                    case 'tonton':
-                        move = this.getBestMove();
-                        break;
+                if (this.currentSize === 4) {
+                    move = this.getRandomMove();
+                } else {
+                    switch(difficulty) {
+                        case 'easy':
+                            move = Math.random() > 0.3 ? this.getSmartMove() : this.getRandomMove();
+                            break;
+                        case 'medium':
+                            move = Math.random() > 0.15 ? this.getSmartMove() : this.getRandomMove();
+                            break;
+                        case 'hard':
+                            move = Math.random() > 0.95 ? this.getSmartMove() : this.getBestMove();
+                            break;
+                        case 'tonton':
+                            move = this.getBestMove();
+                            break;
+                    }
                 }
 
                 if (move !== null) {
