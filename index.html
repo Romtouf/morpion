@@ -20,14 +20,12 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             padding: 20px;
             text-align: center;
-            position: relative;
         }
         .game-board {
             display: grid;
             grid-template-columns: repeat(3, 100px);
             grid-gap: 10px;
             margin: 20px 0;
-            position: relative;
         }
         .cell {
             width: 100px;
@@ -40,14 +38,13 @@
             cursor: pointer;
             transition: background-color 0.3s;
             border-radius: 10px;
-            position: relative;
-            z-index: 2;
         }
         .cell:hover {
             background-color: #d0d0d0;
         }
-        .cell.winner {
-            background-color: rgba(76, 175, 80, 0.2);
+        .cell.winning {
+            color: red;
+            font-weight: bold;
         }
         .status {
             font-size: 24px;
@@ -70,32 +67,6 @@
         }
         .reset-btn:hover {
             background-color: #45a049;
-        }
-        .winning-line {
-            position: absolute;
-            background-color: rgba(255, 0, 0, 0.6);
-            z-index: 1;
-            transition: all 0.5s ease;
-        }
-        .winning-line.horizontal {
-            height: 10px;
-            width: 320px;
-            left: -10px;
-        }
-        .winning-line.vertical {
-            width: 10px;
-            height: 320px;
-            top: -10px;
-        }
-        .winning-line.diagonal-down {
-            width: 10px;
-            height: 450px;
-            transform: rotate(45deg);
-        }
-        .winning-line.diagonal-up {
-            width: 10px;
-            height: 450px;
-            transform: rotate(-45deg);
         }
     </style>
 </head>
@@ -125,16 +96,17 @@
         let currentPlayer = 'X';
         let gameBoard = ['', '', '', '', '', '', '', '', ''];
         let gameActive = true;
+        let winningIndexes = [];
 
         const winningConditions = [
-            {indexes: [0, 1, 2], type: 'horizontal', position: 'top'},
-            {indexes: [3, 4, 5], type: 'horizontal', position: 'middle'},
-            {indexes: [6, 7, 8], type: 'horizontal', position: 'bottom'},
-            {indexes: [0, 3, 6], type: 'vertical', position: 'left'},
-            {indexes: [1, 4, 7], type: 'vertical', position: 'middle'},
-            {indexes: [2, 5, 8], type: 'vertical', position: 'right'},
-            {indexes: [0, 4, 8], type: 'diagonal', position: 'down'},
-            {indexes: [2, 4, 6], type: 'diagonal', position: 'up'}
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
         ];
 
         function handleCellClick(e) {
@@ -146,63 +118,22 @@
             gameBoard[clickedCellIndex] = currentPlayer;
             clickedCell.textContent = currentPlayer;
 
-            // Utiliser setTimeout pour s'assurer que le rendu est à jour
-            setTimeout(checkResult, 0);
-        }
-
-        function drawWinningLine(winCondition) {
-            const line = document.createElement('div');
-            line.classList.add('winning-line');
-            
-            // Déterminer la classe et la position en fonction du type de ligne
-            switch(winCondition.type) {
-                case 'horizontal':
-                    line.classList.add('horizontal');
-                    if (winCondition.position === 'top') line.style.top = '50px';
-                    if (winCondition.position === 'middle') line.style.top = '160px';
-                    if (winCondition.position === 'bottom') line.style.top = '270px';
-                    break;
-                case 'vertical':
-                    line.classList.add('vertical');
-                    if (winCondition.position === 'left') line.style.left = '50px';
-                    if (winCondition.position === 'middle') line.style.left = '160px';
-                    if (winCondition.position === 'right') line.style.left = '270px';
-                    break;
-                case 'diagonal':
-                    if (winCondition.position === 'down') {
-                        line.classList.add('diagonal-down');
-                        line.style.left = '145px';
-                        line.style.top = '-60px';
-                    }
-                    if (winCondition.position === 'up') {
-                        line.classList.add('diagonal-up');
-                        line.style.left = '145px';
-                        line.style.top = '-60px';
-                    }
-                    break;
-            }
-
-            board.appendChild(line);
-
-            // Mettre en surbrillance les cellules gagnantes
-            winCondition.indexes.forEach(index => {
-                cells[index].classList.add('winner');
-            });
+            checkResult();
         }
 
         function checkResult() {
             let roundWon = false;
-            let winningCondition = null;
+            winningIndexes = [];
 
             for (let condition of winningConditions) {
-                const [a, b, c] = condition.indexes;
+                const [a, b, c] = condition;
                 if (
                     gameBoard[a] &&
                     gameBoard[a] === gameBoard[b] &&
                     gameBoard[a] === gameBoard[c]
                 ) {
                     roundWon = true;
-                    winningCondition = condition;
+                    winningIndexes = [a, b, c];
                     break;
                 }
             }
@@ -211,10 +142,10 @@
                 status.textContent = `Le joueur ${currentPlayer} a gagné !`;
                 gameActive = false;
                 
-                // Utiliser setTimeout pour s'assurer que la ligne gagnante est bien dessinée
-                setTimeout(() => {
-                    drawWinningLine(winningCondition);
-                }, 10);
+                // Colorer les cases gagnantes en rouge
+                winningIndexes.forEach(index => {
+                    cells[index].classList.add('winning');
+                });
                 
                 return;
             }
@@ -237,14 +168,8 @@
             
             cells.forEach(cell => {
                 cell.textContent = '';
-                cell.classList.remove('winner');
+                cell.classList.remove('winning');
             });
-
-            // Supprimer la ligne de victoire précédente s'il y en a une
-            const existingLine = board.querySelector('.winning-line');
-            if (existingLine) {
-                board.removeChild(existingLine);
-            }
         }
 
         cells.forEach(cell => cell.addEventListener('click', handleCellClick));
